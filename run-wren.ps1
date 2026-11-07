@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $logDirectory = Join-Path $root 'logs'
-$logPath = Join-Path $logDirectory 'foxxie-quotes.log'
+$logPath = Join-Path $logDirectory 'wren.log'
 
 New-Item -ItemType Directory -Force -Path $logDirectory | Out-Null
 Set-Location -LiteralPath $root
@@ -18,7 +18,7 @@ if ($null -ne $parentProcess -and $parentProcess.ProcessName -eq 'wscript') {
 
 while ($null -eq $launcherProcess -or -not $launcherProcess.HasExited) {
     $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-    Add-Content -LiteralPath $logPath -Value "[$timestamp] Starting Foxie Quotes"
+    Add-Content -LiteralPath $logPath -Value "[$timestamp] Starting Wren"
     $process = $null
     $started = $false
     $exitCode = 1
@@ -75,7 +75,7 @@ while ($null -eq $launcherProcess -or -not $launcherProcess.HasExited) {
     }
 
     $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-    Add-Content -LiteralPath $logPath -Value "[$timestamp] Foxie Quotes stopped with exit code $exitCode. Restarting in 10 seconds."
+    Add-Content -LiteralPath $logPath -Value "[$timestamp] Wren stopped with exit code $exitCode. Restarting in 10 seconds."
     for ($pause = 0; $pause -lt 100; $pause++) {
         if ($null -ne $launcherProcess -and $launcherProcess.HasExited) { return }
         Start-Sleep -Milliseconds 100

@@ -1,9 +1,13 @@
 $ErrorActionPreference = 'Stop'
-$taskName = 'Foxie Quotes Bot'
+$taskName = 'Wren Discord Bot'
 
-if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
+$task = @(Get-ScheduledTask -ErrorAction Stop | Where-Object { $_.TaskName -eq $taskName -and $_.TaskPath -eq '\' })
+if ($task | Where-Object State -EQ 'Running') {
+    throw 'Wren is running. Complete a controlled stop and confirm its child processes have exited before removing the task.'
+}
+if ($task) {
     Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
-    Write-Host 'Foxie Quotes startup task removed.'
+    Write-Host 'Wren startup task removed.'
 } else {
-    Write-Host 'Foxie Quotes startup task is not installed.'
+    Write-Host 'Wren startup task is not installed. Legacy tasks are left unchanged; see docs/startup-migration.md.'
 }

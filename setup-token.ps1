@@ -6,8 +6,8 @@ try {
 
     Add-Type -AssemblyName System.Security
 
-    $Host.UI.RawUI.WindowTitle = 'Foxie Quotes - Secure Token Setup'
-    Write-Host 'Paste the newly reset Foxie Quotes bot token, then press Enter.' -ForegroundColor Cyan
+    $Host.UI.RawUI.WindowTitle = 'Wren - Secure Token Setup'
+    Write-Host 'Paste your Wren bot token, then press Enter.' -ForegroundColor Cyan
     Write-Host 'Nothing will appear while you paste. That is expected.'
     Write-Host 'The token will be encrypted for this Windows account and will not be stored as plain text.'
     $secureToken = Read-Host 'Bot token' -AsSecureString
@@ -40,7 +40,7 @@ try {
     }
 
     Write-Host ''
-    Write-Host 'SUCCESS: Foxie Quotes token saved securely.' -ForegroundColor Green
+    Write-Host 'SUCCESS: Wren token saved securely.' -ForegroundColor Green
 }
 catch {
     Write-Host ''
