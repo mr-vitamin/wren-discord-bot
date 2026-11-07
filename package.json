@@ -1,0 +1,14 @@
+{
+  "name": "foxxie-quotes-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Locally hosted quote bot and staff submission tracker for Wet Paper Magazine",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "check": "node --check src/index.js && node --test"
+  },
+  "dependencies": {
+    "discord.js": "^14.22.1"
+  }
+}

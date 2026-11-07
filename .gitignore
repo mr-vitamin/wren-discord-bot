@@ -1,0 +1,62 @@
+# Dependencies and package-manager caches
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+
+# Local bot credential, environment files, and credential stores
+token.dat
+token.txt
+tokens.json
+.env
+.env.*
+*.env
+.npmrc
+.git-credentials
+.netrc
+credentials/
+credentials.*
+secrets/
+secrets.*
+.aws/
+.azure/
+.ssh/
+*.pem
+*.key
+*.pfx
+*.p12
+*.kdbx
+id_rsa*
+id_ed25519*
+
+# Runtime records and logs: never publish live Discord data
+data/
+logs/
+*.log
+
+# Local audit tools, reports, backups, and internal publication notes
+work/
+backups/
+*.bak
+*.backup
+policies/publication-checklist.md
+
+# Generated output and temporary files
+coverage/
+.nyc_output/
+.cache/
+.eslintcache
+dist/
+build/
+*.tmp
+*.swp
+*.swo
+test/tmp-*/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+

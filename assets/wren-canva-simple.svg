@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Simple Wren bird avatar">
+  <rect width="512" height="512" fill="#0B5960"/>
+  <polygon points="139,295 91,211 190,253" fill="#9D5A32"/>
+  <ellipse cx="258" cy="275" rx="145" ry="126" fill="#A9653A"/>
+  <ellipse cx="279" cy="323" rx="93" ry="63" fill="#F7E8C8"/>
+  <polygon points="391,248 455,270 391,292" fill="#E8A440"/>
+  <circle cx="335" cy="230" r="13" fill="#21201E"/>
+</svg>
