@@ -34,7 +34,7 @@ const QUOTES_CHANNEL_ID = '1552648891445416067';
 const STAFF_COMMAND_CHANNEL_ID = '1556325587432243281'; // private staff bot-coms
 const SUBMISSIONS_FILE = path.join(ROOT, 'data', 'submissions.json');
 const CONTRIBUTOR_ISSUE_FILE = path.join(ROOT, 'data', 'contributor-issue.json');
-const FOX_ORANGE = 0xf97316;
+const WREN_ACCENT = 0xf97316;
 const contributorResetLock = createResetLock();
 
 function loadEncryptedToken() {
@@ -208,7 +208,7 @@ client.once(Events.ClientReady, async (readyClient) => {
     { body: [quoteCommand.toJSON(), submissionCommand.toJSON(), contributorCommand.toJSON()] },
   );
 
-  console.log(`Foxie is online as ${readyClient.user.tag}.`);
+  console.log(`Wren is online as ${readyClient.user.tag}.`);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -277,7 +277,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const speakerName = escapeMarkdown(displayName);
 
     const embed = new EmbedBuilder()
-      .setColor(FOX_ORANGE)
+      .setColor(WREN_ACCENT)
       .setDescription(`❝  **${quoteText}**  ❞\n\n*— ${speakerName}*`);
 
     const quotesChannel = await interaction.guild.channels.fetch(QUOTES_CHANNEL_ID);
@@ -305,6 +305,6 @@ process.on('unhandledRejection', (error) => {
 });
 
 client.login(token).catch((error) => {
-  console.error('Foxie could not log in:', error.message);
+  console.error('Wren could not log in:', error.message);
   process.exitCode = 1;
 });

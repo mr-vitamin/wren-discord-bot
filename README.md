@@ -1,6 +1,8 @@
-# Wren Discord Bot
+# Wren
 
-Wren is a locally hosted Discord bot built for Wet Paper Magazine. It gives the community a way to share quotes, helps staff track individual pieces through editing, and manages participation in magazine issues.
+Wren is an independent, locally hosted Discord automation bot. Its current features support community quotes, editorial submission tracking, and issue participation through Discord commands and interactive components.
+
+Wet Paper Magazine was Wren's original use case. The current server and channel configuration reflects that installation; another server can configure its own copy.
 
 This repository contains the existing implementation, published as a portfolio project by [mr-vitamin](https://github.com/mr-vitamin). Wren uses Discord slash commands and interactive components, with local JSON files for persistent state.
 
@@ -36,7 +38,7 @@ The tracker supports multiple pieces per author, rejects duplicate post links, a
 - `/contributor reset` requires a confirmation button, removes the role from current holders, and reports successful and failed removals.
 - Saved issue state rejects closed or outdated dropdowns. A shared lock coordinates participation changes and staff operations.
 
-Contributor staff commands require **Manage Roles** and the configured staff channel. Participation expresses interest in an issue; it does not submit a manuscript or indicate publication acceptance. The original project describes this feature as a local implementation candidate; this repository does not establish that it has been tested in a live server.
+Contributor staff commands require **Manage Roles** and the configured staff channel. Participation expresses interest in an issue; it does not submit a manuscript or indicate publication acceptance. The implementation has automated tests with mocked Discord interactions; those tests do not establish live-server validation.
 
 ## Technologies
 
@@ -61,15 +63,17 @@ src/
   contributor-discord.js        Participation commands and Discord components
 test/                           Automated tracker and participation tests
 setup-token.ps1                 Hidden token prompt and DPAPI encryption
-run-foxxie-quotes.ps1            Background runner, logging, and restart loop
-start-foxxie-quotes-hidden.vbs   Windowless launcher
+run-wren.ps1                    Background runner, logging, and restart loop
+start-wren-hidden.vbs           Windowless launcher
 install-startup-task.ps1        Optional Windows sign-in task installer
 remove-startup-task.ps1         Startup task removal
+prepare-startup-migration.ps1   Prepare disabled task XML without changing tasks
+docs/startup-migration.md       Approval-gated migration and rollback procedure
 package.json
 package-lock.json
 ```
 
-The npm package and Windows scripts retain their original Foxie/Foxxie names. The scheduled task is named `Foxie Quotes Bot`.
+The npm package is `wren-discord-bot`; the current scheduled-task name is `Wren Discord Bot`. Older installations may still use the former name and scripts. Follow the [startup migration guide](docs/startup-migration.md) before switching an existing installation.
 
 ## Local setup
 
@@ -88,7 +92,7 @@ npm ci
 npm run check
 ```
 
-`npm run check` checks the entry point's syntax and runs the existing tests. These tests use local files and mocked Discord interactions; they do not log the bot into Discord.
+`npm run check` checks the entry point's syntax and runs the tests. These tests use local files, mocked Discord interactions, and (on Windows) mocked Task Scheduler commands; they do not log the bot into Discord or alter real tasks. Windows startup tests are skipped on other operating systems.
 
 ### Configure Discord
 
@@ -101,7 +105,7 @@ The bot is configured for a single server. Before running your own copy:
 
 On connection, Wren replaces this application's guild command list with `/quote`, `/sub`, and `/contributor`. Use a separate application for testing if an existing bot is already running.
 
-### Store the token and start
+### Store the token and start a new installation
 
 ```powershell
 .\setup-token.ps1
@@ -110,18 +114,20 @@ npm start
 
 Enter the token only in the setup script's hidden prompt. It writes `token.dat`, encrypts it with DPAPI for the current Windows user, and restricts access to that file. Run the bot under the Windows account that performed setup. When installing on another machine or account, run token setup again.
 
+An existing installation should keep its encrypted token. Branding cleanup does not require token setup, regeneration, or rotation. Do not start a second copy while another installation is running.
+
 Wren does not currently load `.env` files or environment-based token settings. Do not put a token in the source code, README, or Git configuration.
 
-### Optional automatic startup
+### Optional automatic startup for a new installation
 
 ```powershell
 .\install-startup-task.ps1
-Start-ScheduledTask -TaskName 'Foxie Quotes Bot'
+Start-ScheduledTask -TaskName 'Wren Discord Bot'
 ```
 
-The installer registers a sign-in task but does not start it. Its launcher runs the bot without a console window, writes output to `logs/`, and supervises the child process. To remove automatic startup, use `remove-startup-task.ps1`.
+The installer registers a sign-in task but does not start it. It refuses an existing Wren task, a legacy task, or a detected running Wren process. The task uses `IgnoreNew` to prevent overlapping starts of that task. The launcher runs the bot without a console window, writes output to `logs/wren.log`, and supervises the child process. To remove automatic startup, use `remove-startup-task.ps1` after a controlled stop and a check for remaining child processes.
 
-The task name is shared with the original installation. Installing from another folder updates that task's location. Coordinate a controlled stop and start when moving an active installation to avoid running duplicate bot sessions.
+For an existing installation, use `prepare-startup-migration.ps1` and the [migration guide](docs/startup-migration.md). Preparation only exports the original definition and a disabled replacement; it does not register, stop, disable, remove, or start any task. Directly running `npm start` or the launcher does not enforce a system-wide single-instance lock, so the migration checks and controlled handoff are required.
 
 ## Data and credentials
 
@@ -133,6 +139,8 @@ The task name is shared with the original installation. Installing from another 
 These paths are excluded from Git along with `.env` files, credential files, dependencies, caches, and local work files. A fresh clone starts without live records; the application creates its data files when needed. Keep private backups before moving an existing installation. Submission records cannot be reconstructed from Discord posts.
 
 Local JSON records are not encrypted at rest. The implementation has no automatic record retention or deletion workflow. The existing [privacy policy](policies/privacy.md) and [terms of use](policies/terms.md) describe the service; another operator should review them before deploying a copy.
+
+The `WP-###` submission identifiers are retained for compatibility with existing records. Discord server/channel identifiers, role names, command names, channel permissions, and JSON formats are unchanged by the branding cleanup. Legacy logs are retained locally; the renamed runner writes new output to `wren.log`.
 
 ## Verification scope
 

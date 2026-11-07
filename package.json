@@ -1,8 +1,8 @@
 {
-  "name": "foxxie-quotes-bot",
+  "name": "wren-discord-bot",
   "version": "1.0.0",
   "private": true,
-  "description": "Locally hosted quote bot and staff submission tracker for Wet Paper Magazine",
+  "description": "Independent Discord automation bot for community quotes, editorial tracking, and issue participation",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
