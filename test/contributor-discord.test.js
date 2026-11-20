@@ -21,6 +21,7 @@ test('staff announce posts one message with the menu and persists its message ID
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wren-announce-'));
   try {
     const file = path.join(directory, 'issue.json');
+    require('../src/secure-storage').secureStore.writeJson(path.join(path.dirname(file), 'privacy-state.json'), { version: 1, subjects: [], highWaterMark: 0, backupRoots: [], requiredFiles: [], pending: null });
     let sent;
     let acknowledgement;
     const channel = { id: '123', guildId: 'guild', send: async (payload) => {
@@ -54,6 +55,7 @@ test('staff close persists disabled state and disables the existing dropdown', a
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wren-close-'));
   try {
     const file = path.join(directory, 'issue.json');
+    require('../src/secure-storage').secureStore.writeJson(path.join(path.dirname(file), 'privacy-state.json'), { version: 1, subjects: [], highWaterMark: 0, backupRoots: [], requiredFiles: [], pending: null });
     const { saveIssue } = require('../src/contributor');
     saveIssue(file, { issue: 'Issue #2', channelId: '123', messageId: '456', generation: 'abc', enabled: true });
     let edited;
@@ -76,6 +78,7 @@ test('confirmed reset closes issue, removes every available holder, and reports 
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wren-reset-'));
   try {
     const file = path.join(directory, 'issue.json');
+    require('../src/secure-storage').secureStore.writeJson(path.join(path.dirname(file), 'privacy-state.json'), { version: 1, subjects: [], highWaterMark: 0, backupRoots: [], requiredFiles: [], pending: null });
     const { saveIssue } = require('../src/contributor');
     saveIssue(file, { issue: 'Issue #2', channelId: '123', messageId: '456', generation: 'abc', enabled: true });
     const removed = [];
@@ -88,10 +91,12 @@ test('confirmed reset closes issue, removes every available holder, and reports 
     const guild = {
       client: { user: { id: 'bot' } },
       roles: { cache: new Map([['role', { id: 'role', name: 'Contributor' }]]) },
-      channels: { fetch: async () => ({ messages: { fetch: async () => ({ author: { id: 'bot' }, edit: async () => {} }) } }) },
-      members: { fetch: async () => new Map([['1', member('1')], ['2', member('2', true)]]) },
+      channels: { fetch: async () => ({ permissionsFor: () => ({ has: () => true }), messages: { fetch: async () => ({ author: { id: 'bot' }, edit: async () => {} }) } }) },
+      members: { fetch: async options => options
+        ? { permissions: { has: permission => permission === PermissionFlagsBits.ManageRoles } }
+        : new Map([['1', member('1')], ['2', member('2', true)]]) },
     };
-    const button = { customId: '', update: async () => {}, editReply: async (value) => { output = value.content; } };
+    const button = { customId: '', memberPermissions: { has: () => true }, update: async () => {}, editReply: async (value) => { output = value.content; } };
     const interaction = {
       guildId: 'guild', channelId: 'staff', user: { id: 'staff-member' },
       memberPermissions: { has: () => true }, guild,

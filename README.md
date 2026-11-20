@@ -28,7 +28,7 @@ Staff use these commands in the private `bot-coms` channel:
 | `/sub show` | View one piece by its `WP-###` identifier. |
 | `/sub summary` | Show status counts and unfinished pieces without an editor. |
 
-The tracker supports multiple pieces per author, rejects duplicate post links, and saves records across restarts. Successful tracker replies are visible to people with access to the staff channel. Access to `/sub` relies on the configured guild and private channel permissions; the handler does not require a separate staff role.
+The tracker supports multiple pieces per author, rejects duplicate post links, and saves records across restarts. Successful tracker replies are visible to people with access to the staff channel. Access to `/sub` relies on the configured guild and private channel permissions; the handler requires Manage Roles for every read and write, in addition to the guild/channel checks.
 
 ### Issue participation
 
@@ -125,22 +125,26 @@ Wren does not currently load `.env` files or environment-based token settings. D
 Start-ScheduledTask -TaskName 'Wren Discord Bot'
 ```
 
-The installer registers a sign-in task but does not start it. It refuses an existing Wren task, a legacy task, or a detected running Wren process. The task uses `IgnoreNew` to prevent overlapping starts of that task. The launcher runs the bot without a console window, writes output to `logs/wren.log`, and supervises the child process. To remove automatic startup, use `remove-startup-task.ps1` after a controlled stop and a check for remaining child processes.
+The installer registers a sign-in task but does not start it. It refuses an existing Wren task, a legacy task, or a detected running Wren process. The task uses `IgnoreNew` to prevent overlapping starts of that task. The launcher runs the bot without a console window, writes filtered structured events to `logs/operational/`, and supervises the child process. To remove automatic startup, use `remove-startup-task.ps1` after a controlled stop and a check for remaining child processes.
 
-For an existing installation, use `prepare-startup-migration.ps1` and the [migration guide](docs/startup-migration.md). Preparation only exports the original definition and a disabled replacement; it does not register, stop, disable, remove, or start any task. Directly running `npm start` or the launcher does not enforce a system-wide single-instance lock, so the migration checks and controlled handoff are required.
+For an existing installation, use `prepare-startup-migration.ps1` and the [migration guide](docs/startup-migration.md). Preparation only exports the original definition and a disabled replacement; it does not register, stop, disable, remove, or start any task. Runtime and applying maintenance share a Windows OS mutex; the controlled handoff and stopped-process checks are still required for old installations.
 
 ## Data and credentials
 
 - `token.dat` holds the encrypted bot credential and stays local.
 - `data/submissions.json` holds editorial records, including Discord identifiers and timestamps.
 - `data/contributor-issue.json` holds the active issue's name, message/channel identifiers, enabled state, and dropdown generation.
-- `logs/` holds operational output and may include error details.
+- `data/privacy-state.json` holds encrypted deletion fingerprints, backup registration, recovery state and submission identifier allocation metadata.
+- `backups/managed/` holds encrypted snapshots.
+- `logs/operational/` holds allowlisted operational events with size/date rotation and 30-day/32-file retention. Historical logs remain separately managed.
 
 These paths are excluded from Git along with `.env` files, credential files, dependencies, caches, and local work files. A fresh clone starts without live records; the application creates its data files when needed. Keep private backups before moving an existing installation. Submission records cannot be reconstructed from Discord posts.
 
-Local JSON records are not encrypted at rest. The implementation has no automatic record retention or deletion workflow. The existing [privacy policy](policies/privacy.md) and [terms of use](policies/terms.md) describe the service; another operator should review them before deploying a copy.
+Records and new managed backups use Windows CurrentUser DPAPI encryption and restricted ACLs. Existing plaintext installations require an explicit, stopped-bot migration before this version can start. Offline tools preview migration, backup, restore and verified deletion requests; no automatic editorial-record expiry is configured. Read [privacy operations](docs/privacy-operations.md) for exact safeguards, retention, deletion, recovery and deployment steps.
 
-The `WP-###` submission identifiers are retained for compatibility with existing records. Discord server/channel identifiers, role names, command names, channel permissions, and JSON formats are unchanged by the branding cleanup. Legacy logs are retained locally; the renamed runner writes new output to `wren.log`.
+The existing [privacy policy](policies/privacy.md) and [terms of use](policies/terms.md) remain unchanged and require separate review before publication or deployment; they do not yet describe this proposed hardened version.
+
+The `WP-###` submission identifiers are retained for compatibility with existing records. Discord server/channel identifiers, role names, command names, channel permissions, and JSON formats are unchanged by the branding cleanup. Legacy logs are retained locally; this runner writes only approved events into `logs/operational/`.
 
 ## Verification scope
 

@@ -1,9 +1,14 @@
 const fs = require('node:fs');
-const path = require('node:path');
+const { secureStore } = require('./secure-storage');
+const { readLedgerFor } = require('./privacy-ledger');
 
 function loadIssue(file) {
   if (!fs.existsSync(file)) return null;
-  const issue = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const issue = secureStore.readJson(file);
+  validateIssue(issue);
+  return issue;
+}
+function validateIssue(issue) {
   if (!issue || typeof issue.issue !== 'string' || typeof issue.channelId !== 'string'
     || typeof issue.messageId !== 'string' || typeof issue.generation !== 'string'
     || typeof issue.enabled !== 'boolean') throw new Error('Invalid Contributor issue configuration.');
@@ -11,10 +16,12 @@ function loadIssue(file) {
 }
 
 function saveIssue(file, issue) {
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  const temporary = `${file}.${process.pid}.tmp`;
-  fs.writeFileSync(temporary, `${JSON.stringify(issue, null, 2)}\n`, { mode: 0o600 });
-  fs.renameSync(temporary, file);
+  validateIssue(issue);
+  const { state, ledgerFile } = readLedgerFor(file, secureStore);
+  if (!state.requiredFiles.includes('contributor-issue.json')) {
+    state.requiredFiles.push('contributor-issue.json'); secureStore.writeJson(ledgerFile, state);
+  }
+  secureStore.writeJson(file, issue);
 }
 
 function issueControlId(issue) { return `wren:contributor:${issue.generation}`; }
@@ -80,4 +87,4 @@ function createResetLock() {
   };
 }
 
-module.exports = { loadIssue, saveIssue, issueControlId, parseIssueControlId, isCurrentControl, changeParticipation, resetContributors, createResetLock };
+module.exports = { loadIssue, saveIssue, issueControlId, parseIssueControlId, isCurrentControl, changeParticipation, resetContributors, createResetLock, validateIssue };

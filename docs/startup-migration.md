@@ -1,5 +1,7 @@
 # Wren startup migration
 
+For the privacy-hardening version, first read [privacy operations](privacy-operations.md). Data must be explicitly migrated under the existing account with the bot stopped. New readiness evidence is an `event: ready` record under `logs/operational/`; older log-message assertions and plaintext backup scripts do not apply. Preserve the token and existing task identity.
+
 This procedure moves an existing Windows installation from the legacy `Foxie Quotes Bot` task and scripts to `Wren Discord Bot`, `start-wren-hidden.vbs`, and `run-wren.ps1`. The alternative legacy task spelling `Foxxie Quotes Bot` is also recognized by the preparation script.
 
 **Preparation is safe while the current bot is running. Applying the migration requires the owner's approval and a controlled interruption.** A reviewed or merged pull request alone does not authorize stopping the bot or changing Windows tasks.

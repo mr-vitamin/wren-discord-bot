@@ -7,6 +7,7 @@ const {
   Events,
   GatewayIntentBits,
   MessageFlags,
+  PermissionFlagsBits,
   REST,
   Routes,
   SlashCommandBuilder,
@@ -24,6 +25,11 @@ const {
   contributorCommand, createResetLock, handleChoice, handleStaffCommand,
 } = require('./contributor-discord');
 const { loadIssue } = require('./contributor');
+const { isStaff } = require('./access');
+const { createClientOptions } = require('./client-options');
+const { log } = require('./safe-log');
+const { createMaintenance } = require('./maintenance');
+const { acquireLock } = require('./operation-lock');
 
 const ROOT = path.resolve(__dirname, '..');
 const TOKEN_FILE = path.join(ROOT, 'token.dat');
@@ -83,6 +89,8 @@ const quoteCommand = new SlashCommandBuilder()
 const submissionCommand = new SlashCommandBuilder()
   .setName('sub')
   .setDescription('Track the editorial status of submissions (staff only)')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
+  .setDMPermission(false)
   .addSubcommand((subcommand) =>
     subcommand.setName('add').setDescription('Add a piece to the editorial tracker')
       .addStringOption((option) => option.setName('title').setDescription('Piece title').setRequired(true).setMaxLength(120))
@@ -138,11 +146,12 @@ function statusLabel(status) {
 }
 
 async function handleSubmissionCommand(interaction) {
-  if (interaction.guildId !== GUILD_ID || interaction.channelId !== STAFF_COMMAND_CHANNEL_ID) {
-    await interaction.reply({ content: `Use /sub in <#${STAFF_COMMAND_CHANNEL_ID}>.`, flags: MessageFlags.Ephemeral });
+  if (!isStaff(interaction, GUILD_ID, STAFF_COMMAND_CHANNEL_ID)) {
+    await interaction.reply({ content: `Use /sub in <#${STAFF_COMMAND_CHANNEL_ID}> with Manage Roles permission.`, flags: MessageFlags.Ephemeral });
     return;
   }
 
+  await interaction.deferReply(); // Preserve staff-channel visibility, acknowledge before synchronous encryption.
   try {
     const records = loadSubmissions(SUBMISSIONS_FILE);
     const subcommand = interaction.options.getSubcommand();
@@ -191,34 +200,25 @@ async function handleSubmissionCommand(interaction) {
       content = `${header}\n${lines.length ? lines.join('\n') : 'Nothing to show.'}${selected.length > lines.length ? '\nShowing the most recent entries. Use /sub show for details.' : ''}`;
     }
 
-    await interaction.reply({ content, allowedMentions: { parse: [] } });
+    await interaction.editReply({ content, allowedMentions: { parse: [] } });
   } catch (error) {
-    console.error('Submission command failed:', error);
-    await interaction.reply({ content: error.message || 'Could not update the tracker.', flags: MessageFlags.Ephemeral, allowedMentions: { parse: [] } });
+    log('submission_failed', error);
+    await interaction.editReply({ content: 'Could not update the tracker. Check your inputs or contact the operator.', allowedMentions: { parse: [] } });
   }
 }
 
-const token = loadEncryptedToken();
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
-
-client.once(Events.ClientReady, async (readyClient) => {
-  const rest = new REST({ version: '10' }).setToken(token);
-  await rest.put(
-    Routes.applicationGuildCommands(readyClient.user.id, GUILD_ID),
-    { body: [quoteCommand.toJSON(), submissionCommand.toJSON(), contributorCommand.toJSON()] },
-  );
-
-  console.log(`Wren is online as ${readyClient.user.tag}.`);
-});
-
-client.on(Events.InteractionCreate, async (interaction) => {
+async function handleInteraction(interaction) {
   if (interaction.isStringSelectMenu() && interaction.customId.startsWith('wren:contributor:')) {
     try {
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
       await handleChoice(interaction, loadIssue(CONTRIBUTOR_ISSUE_FILE), {
         file: CONTRIBUTOR_ISSUE_FILE, resetLock: contributorResetLock,
       });
     } catch (error) {
-      console.error('Contributor interaction failed:', error);
+      log('contributor_failed', error);
+      if (interaction.deferred) {
+        await interaction.editReply({ content: 'Participation is temporarily unavailable. Please contact staff.' }).catch(() => {});
+      }
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({ content: 'Participation is temporarily unavailable. Please contact staff.', flags: MessageFlags.Ephemeral }).catch(() => {});
       }
@@ -258,7 +258,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
   try {
     const rawQuote = interaction.options.getString('quote', true).trim();
     const speaker = interaction.options.getUser('speaker', true);
-    const member = await interaction.guild.members.fetch(speaker.id).catch(() => null);
+    const member = await interaction.guild.members.fetch({ user: speaker.id, cache: false, force: true }).catch(() => null);
     const displayName = member?.displayName || speaker.globalName || speaker.displayName || speaker.username;
 
     const quoteText = escapeMarkdown(rawQuote, {
@@ -291,20 +291,33 @@ client.on(Events.InteractionCreate, async (interaction) => {
     });
     await interaction.editReply('Posted.');
   } catch (error) {
-    console.error('Quote command failed:', error);
+    log('quote_failed', error);
     await interaction.editReply('I could not post that quote. Please tell an admin.');
   }
-});
+}
 
-client.on(Events.Error, (error) => {
-  console.error('Discord client error:', error);
-});
-
-process.on('unhandledRejection', (error) => {
-  console.error('Unhandled rejection:', error);
-});
-
-client.login(token).catch((error) => {
-  console.error('Wren could not log in:', error.message);
-  process.exitCode = 1;
-});
+function start() {
+  const release = acquireLock(ROOT);
+  process.once('exit', release);
+  createMaintenance({ root: ROOT }).assertReady();
+  const token = loadEncryptedToken();
+  const client = new Client(createClientOptions());
+  client.once(Events.ClientReady, async readyClient => {
+    try {
+      const rest = new REST({ version: '10' }).setToken(token);
+      await rest.put(Routes.applicationGuildCommands(readyClient.user.id, GUILD_ID),
+        { body: [quoteCommand.toJSON(), submissionCommand.toJSON(), contributorCommand.toJSON()] });
+      log('ready');
+    } catch (error) { log('startup_failed', error); client.destroy(); process.exitCode = 1; }
+  });
+  client.on(Events.InteractionCreate, interaction => handleInteraction(interaction).catch(error => log('dispatch_failed', error)));
+  client.on(Events.Error, error => log('client_failed', error));
+  client.login(token).catch(error => { log('startup_failed', error); client.destroy(); process.exitCode = 1; });
+  return client;
+}
+if (require.main === module) {
+  process.on('unhandledRejection', error => log('unhandled_failure', error));
+  process.on('uncaughtException', error => { log('unhandled_failure', error); process.exit(1); });
+  try { start(); } catch (error) { log('startup_failed', error); process.exitCode = 1; }
+}
+module.exports = { handleSubmissionCommand, handleInteraction, submissionCommand, quoteCommand, start };

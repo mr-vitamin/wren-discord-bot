@@ -12,6 +12,7 @@ test('issue state survives restart and old component identifiers become invalid'
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wren-issue-'));
   try {
     const file = path.join(dir, 'issue.json');
+    require('../src/secure-storage').secureStore.writeJson(path.join(path.dirname(file), 'privacy-state.json'), { version: 1, subjects: [], highWaterMark: 0, backupRoots: [], requiredFiles: [], pending: null });
     const first = { issue: 'Issue 2', channelId: '123', messageId: '456', generation: 'abc', enabled: true };
     saveIssue(file, first);
     assert.deepEqual(loadIssue(file), first);

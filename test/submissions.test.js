@@ -15,6 +15,7 @@ test('tracks multiple pieces per writer and persists editing status', () => {
   const directory = fs.mkdtempSync(path.join(__dirname, 'tmp-'));
   try {
     const filePath = path.join(directory, 'submissions.json');
+    require('../src/secure-storage').secureStore.writeJson(path.join(path.dirname(filePath), 'privacy-state.json'), { version: 1, subjects: [], highWaterMark: 0, backupRoots: [], requiredFiles: [], pending: null });
     const records = loadSubmissions(filePath);
     const first = addSubmission(records, { title: '  The   Moving Village  ', authorId: '123', submittedById: '456' });
     const second = addSubmission(records, { title: 'Another piece', authorId: '123', submittedById: '456' });

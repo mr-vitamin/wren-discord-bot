@@ -7,6 +7,7 @@ const {
   changeParticipation, createResetLock, isCurrentControl, issueControlId,
   loadIssue, resetContributors, saveIssue,
 } = require('./contributor');
+const { log } = require('./safe-log');
 
 const contributorCommand = new SlashCommandBuilder()
   .setName('contributor')
@@ -43,16 +44,17 @@ function resolveContributorRole(guild) {
 
 async function handleChoice(interaction, issue, { file, resetLock } = {}) {
   if (!isCurrentControl(issue, interaction.customId, interaction.channelId, interaction.message.id)) {
-    await interaction.reply({ content: 'Participation for this announcement is closed or outdated.', flags: MessageFlags.Ephemeral });
+    if (interaction.deferred) await interaction.editReply({ content: 'Participation for this announcement is closed or outdated.' });
+    else await interaction.reply({ content: 'Participation for this announcement is closed or outdated.', flags: MessageFlags.Ephemeral });
     return;
   }
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  if (!interaction.deferred) await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   try {
     const operation = async () => {
       const current = file ? loadIssue(file) : issue;
       if (!isCurrentControl(current, interaction.customId, interaction.channelId, interaction.message.id)) return 'stale';
       const role = resolveContributorRole(interaction.guild);
-      const member = await interaction.guild.members.fetch({ user: interaction.user.id, force: true });
+      const member = await interaction.guild.members.fetch({ user: interaction.user.id, force: true, cache: false });
       if (!member) throw new Error('Your server membership could not be found.');
       return changeParticipation(member, role.id, interaction.values[0]);
     };
@@ -69,7 +71,7 @@ async function handleChoice(interaction, issue, { file, resetLock } = {}) {
     };
     await interaction.editReply({ content: responses[result], allowedMentions: { parse: [] } });
   } catch (error) {
-    console.error('Contributor participation failed:', error);
+    log('participation_failed', error);
     await interaction.editReply({ content: /reset is in progress/i.test(error.message)
       ? 'A staff reset is in progress. Please try again afterward.'
       : 'I could not update your Contributor role. Please contact staff.' });
@@ -134,8 +136,8 @@ async function handleStaffCommand(interaction, { file, guildId, staffChannelId, 
       }
     });
   } catch (error) {
-    console.error('Contributor staff command failed:', error);
-    await interaction.editReply(error.message || 'Could not update issue participation.');
+    log('contributor_failed', error);
+    await interaction.editReply('Could not update issue participation. Check the current issue state or contact the operator.');
   }
 }
 
@@ -164,9 +166,18 @@ async function confirmAndReset(interaction, { file, resetLock }) {
     await button.update({ content: 'Reset cancelled. No roles were changed.', components: [] });
     return;
   }
+  if (!button.memberPermissions?.has(PermissionFlagsBits.ManageRoles)) {
+    await button.update({ content: 'Reset denied: Manage Roles permission is required.', components: [] });
+    return;
+  }
   await button.update({ content: 'Resetting Contributor roles. This may take a moment.', components: [] });
   try {
     const result = await resetLock.run(async () => {
+      const member = await interaction.guild.members.fetch({ user: interaction.user.id, force: true, cache: false });
+      const channel = await interaction.guild.channels.fetch(interaction.channelId);
+      if (!channel?.permissionsFor(member)?.has(PermissionFlagsBits.ManageRoles)) {
+        const denied = new Error('Staff authorization changed.'); denied.code = 'STAFF_AUTH_REQUIRED'; throw denied;
+      }
       const current = loadIssue(file);
       if (current?.enabled) {
         saveIssue(file, { ...current, enabled: false, generation: randomBytes(12).toString('hex') });
@@ -179,8 +190,9 @@ async function confirmAndReset(interaction, { file, resetLock }) {
     });
     await button.editReply({ content: `Contributor reset finished. Removed: ${result.removed}. Failed: ${result.failed}.${result.warning ? ` ${result.warning}` : ''}` });
   } catch (error) {
-    console.error('Contributor reset failed:', error);
-    await button.editReply({ content: `Contributor reset could not finish: ${error.message}` });
+    log('reset_failed', error);
+    await button.editReply({ content: error.code === 'STAFF_AUTH_REQUIRED'
+      ? 'Reset denied: staff authorization changed.' : 'Contributor reset could not finish. Please contact the operator.' });
   }
 }
 

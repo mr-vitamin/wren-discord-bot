@@ -1,10 +1,9 @@
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$logDirectory = Join-Path $root 'logs'
-$logPath = Join-Path $logDirectory 'wren.log'
-
-New-Item -ItemType Directory -Force -Path $logDirectory | Out-Null
+. (Join-Path $root 'scripts\operational-logging.ps1')
+$logState = New-WrenLog -Directory (Join-Path $root 'logs\operational')
+$nextLogMaintenance = [DateTime]::UtcNow.AddMinutes(1)
 Set-Location -LiteralPath $root
 
 # If Task Scheduler stops the windowless host, stop its supervised bot too.
@@ -18,7 +17,7 @@ if ($null -ne $parentProcess -and $parentProcess.ProcessName -eq 'wscript') {
 
 while ($null -eq $launcherProcess -or -not $launcherProcess.HasExited) {
     $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-    Add-Content -LiteralPath $logPath -Value "[$timestamp] Starting Wren"
+    Write-WrenEvent $logState 'starting'
     $process = $null
     $started = $false
     $exitCode = 1
@@ -40,12 +39,16 @@ while ($null -eq $launcherProcess -or -not $launcherProcess.HasExited) {
         $outputTask = $process.StandardOutput.ReadLineAsync()
         $errorTask = $process.StandardError.ReadLineAsync()
         while ($null -ne $outputTask -or $null -ne $errorTask) {
+            if ([DateTime]::UtcNow -ge $nextLogMaintenance) {
+                Invoke-WrenLogMaintenance $logState
+                $nextLogMaintenance = [DateTime]::UtcNow.AddMinutes(1)
+            }
             if ($null -ne $launcherProcess -and $launcherProcess.HasExited) { return }
             if ($null -ne $outputTask -and $outputTask.IsCompleted) {
                 $line = $outputTask.GetAwaiter().GetResult()
                 if ($null -eq $line) { $outputTask = $null }
                 else {
-                    Add-Content -LiteralPath $logPath -Value $line -Encoding UTF8
+                    Receive-WrenEvent $logState $line
                     $outputTask = $process.StandardOutput.ReadLineAsync()
                 }
             }
@@ -53,7 +56,7 @@ while ($null -eq $launcherProcess -or -not $launcherProcess.HasExited) {
                 $line = $errorTask.GetAwaiter().GetResult()
                 if ($null -eq $line) { $errorTask = $null }
                 else {
-                    Add-Content -LiteralPath $logPath -Value $line -Encoding UTF8
+                    Receive-WrenEvent $logState $line
                     $errorTask = $process.StandardError.ReadLineAsync()
                 }
             }
@@ -64,7 +67,7 @@ while ($null -eq $launcherProcess -or -not $launcherProcess.HasExited) {
     }
     catch {
         $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-        Add-Content -LiteralPath $logPath -Value "[$timestamp] Launcher error: $($_.Exception.Message)" -Encoding UTF8
+        Write-WrenEvent $logState 'launcher_failed'
     }
     finally {
         if ($null -ne $process) {
@@ -75,7 +78,7 @@ while ($null -eq $launcherProcess -or -not $launcherProcess.HasExited) {
     }
 
     $timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-    Add-Content -LiteralPath $logPath -Value "[$timestamp] Wren stopped with exit code $exitCode. Restarting in 10 seconds."
+    Write-WrenEvent $logState 'stopped' @{exitCode=$exitCode}
     for ($pause = 0; $pause -lt 100; $pause++) {
         if ($null -ne $launcherProcess -and $launcherProcess.HasExited) { return }
         Start-Sleep -Milliseconds 100
