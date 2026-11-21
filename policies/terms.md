@@ -1,73 +1,107 @@
-# Terms of Use
+# Wren Terms of Service
 
-**Last revised:** October 7, 2026  
-**Operator:** Independent developer of Wren  
-**Contact:** contact.wrenbot@gmail.com
+**Last revised:** November 20, 2026
 
-Please read these Terms of Use (the **“Terms”**) before installing or using Wren. These Terms concern your access to and use of the Wren Discord application (the **“Service”**) operated by the independent developer identified above (the **“Operator,” “we,” “us,”** or **“our”**). By installing, authorizing, or using the Service, you agree to these Terms with the Operator. If you do not agree, do not install or use the Service.
+**Operator:** Wren's Independent Developer, United States
 
-Wren is an independent application. It is not owned, operated, sponsored, or endorsed by Discord Inc. Your use of Discord remains subject to Discord’s own terms, policies, and server rules.
+**Support and legal contact:** [contact.wrenbot@gmail.com](mailto:contact.wrenbot@gmail.com)
 
-## The Service
+These Terms of Service (the **Terms**) govern your installation, authorization, and use of Wren, a standalone Discord bot for writing communities (the **Service**). The Service is operated by Wren's Independent Developer (the **Operator**, **we**, **us**, or **our**). By installing, authorizing, or using Wren, you agree to these Terms. If you do not agree, do not install or use the Service.
 
-Wren provides optional tools and automated functions within Discord. Available functions may vary by server, permissions, and version. User-facing commands and help materials describe the functions available at the time of use; those descriptions do not guarantee that a particular function will remain available. We may add, change, limit, or discontinue functions as described under “Changes, suspension, and termination.”
+Wren is independently operated. It is not owned, operated, sponsored, or endorsed by Discord Inc. Your use of Discord remains subject to [Discord's Terms of Service](https://discord.com/terms), applicable Discord policies, and your server's rules.
 
-## Eligibility and authority
+## 1. The Service
 
-You may use the Service only if you are permitted to use Discord under its applicable minimum-age rules and are not prohibited from using the Service by applicable law. If you install Wren or authorize it on behalf of a server or organization, you represent that you have authority to do so. You are responsible for the actions you take through your Discord account and for complying with the rules of the server in which you use Wren.
+Wren provides tools for community quotes, editorial tracking, announcements, and Contributor role management:
 
-## User-provided content
+- **Quotes:** users submit quote text and select a speaker for attribution. Wren posts a formatted message in the configured quotes channel.
+- **Editorial tracking:** authorized staff add and manage titles, authors, editor assignments, statuses, and optional Discord post links, and view records or summaries.
+- **Announcements and participation:** authorized staff post issue announcements with participation controls, close participation, and confirm resets that remove the Contributor role from its current holders. Members can use an active participation control to add or remove that role.
 
-**“User Content”** means information or material you provide through the Service. You retain any rights you already have in your User Content. You grant the Operator a limited, non-exclusive permission to process and transmit that content solely as needed to provide the function you request and operate the Service. This permission does not transfer ownership of your content to the Operator or authorize unrelated publication or advertising.
+Available functions depend on the configured server and channels, Discord permissions, role hierarchy, and the installed version. Adding Wren to a server does not guarantee that every feature is configured or available. Help materials describe current features; they do not promise that any feature will remain available.
 
-You represent that you have the rights and permissions needed to submit the content and that its use as requested will not infringe another person’s copyright, privacy, publicity, or other rights. Do not provide another person’s private or confidential information without authorization. Wren does not independently verify the accuracy of user-provided information or the permissions associated with it.
+Participation indicates interest in a community's issue or activity. It does not submit a manuscript, establish publication acceptance, transfer content rights, or create an editorial or publishing agreement. Wren does not independently verify submissions, authorship, attributions, or editorial decisions.
 
-## Acceptable use
+## 2. Eligibility and authority
 
-You agree not to use, or attempt to use, the Service to:
+You may use Wren only if you meet Discord's applicable minimum-age requirements and any other eligibility requirements imposed by law. If applicable law requires a parent or guardian's permission for you to accept these Terms, obtain that permission before use.
 
-- violate applicable law, Discord’s terms or policies, or a server’s rules;
+If you install or authorize Wren for a server or organization, you represent that you have authority to do so. You are responsible for actions taken through your Discord account and for following the rules of the server in which you use Wren.
+
+## 3. Responsibilities of server administrators and staff
+
+Server administrators are responsible for deciding whether Wren is appropriate for their community, configuring channel access and permissions, and informing members about how staff use its features. Staff should explain when they create editorial records about other people or post attributed quotes.
+
+Editorial commands and Contributor administrative commands require **Manage Roles** in the configured staff context. Administrators should limit that permission to appropriate staff and review who can access channels containing tracker replies or announcements. Staff-channel replies are not private to the person who ran the command.
+
+Review the destination and content before posting an announcement. Review reset confirmations carefully: a reset can remove a role from many members and has no automatic undo. Role changes can fail because of permissions, hierarchy, Discord availability, or other errors. Server administrators remain responsible for moderation and community decisions; these responsibilities do not remove the Operator's own obligations.
+
+## 4. User-provided content
+
+**User Content** means information or material submitted through Wren, including quotes, attributions, editorial details, and announcement text. You retain any rights you already have in your User Content.
+
+You grant the Operator a limited, non-exclusive permission to process, store, reproduce, and transmit User Content only as needed to carry out requested functions and operate, secure, back up, and recover the Service as described in the [Privacy Policy](https://vtmnarchive.com/wren/privacy). This permission does not transfer ownership, authorize unrelated advertising or publication, or override applicable deletion rights.
+
+You represent that you have the rights and permissions needed to submit the content and request its use. Do not submit another person's private or confidential information without authorization, misattribute a quote or work, or provide material that infringes copyright, privacy, publicity, or other rights. Wren does not independently verify those permissions or the accuracy of user-provided information.
+
+## 5. Acceptable use
+
+You agree not to use, or attempt to use, Wren to:
+
+- violate applicable law, Discord's terms or policies, or a server's rules;
 - harass, threaten, defame, impersonate, or exploit another person;
 - disclose personal or confidential information without authorization;
 - infringe intellectual-property, privacy, publicity, or other rights;
-- send spam, deceptive material, malware, or content intended to disrupt the Service;
-- bypass access controls or use restricted functions without authorization; or
-- interfere with, overload, reverse engineer, or compromise the Service, its host, or Discord’s systems, except to the extent a restriction is prohibited by applicable law.
+- send spam, deceptive material, malware, or material intended to disrupt the Service;
+- bypass access controls or use restricted features without authorization; or
+- interfere with, overload, reverse engineer, or compromise Wren, its host, or Discord's systems, except where a restriction is prohibited by law or an applicable software license permits the activity.
 
-We may decline to process a request or restrict access where reasonably necessary to address misuse, a legal obligation, or a security risk. Server administrators remain responsible for moderation within their servers.
+Do not submit passwords, access tokens, financial information, health information, or other sensitive personal information through bot commands. We may decline requests or restrict access where reasonably necessary to address misuse, legal obligations, or security risks.
 
-## Privacy and data requests
+## 6. Privacy and data requests
 
-The Wren Privacy Policy explains what information the Service receives, stores, and shares; how long it is kept; and how to request access, correction, or deletion. The Privacy Policy forms part of these Terms only to the extent applicable law permits and does not diminish any privacy right you may have. Removing Wren from a server does not by itself remove information already posted to Discord or records held by the Operator. Use the contact method above to make a data request.
+The [Wren Privacy Policy](https://vtmnarchive.com/wren/privacy) explains the information Wren processes, local and cloud storage, retention, and requests for access, correction, or deletion. It forms part of these Terms only to the extent applicable law permits and does not diminish any privacy right you may have.
 
-## Third-party services and links
+Removing Wren from a server does not automatically delete editorial records, backups, or messages already posted to Discord. Contact [contact.wrenbot@gmail.com](mailto:contact.wrenbot@gmail.com) to make a data request. Deleting a local record and deleting a Discord message are separate actions.
 
-Wren operates through Discord. Discord controls accounts, channels, server permissions, message storage, and its own availability. We are not responsible for the content or practices of a third-party site or service reached through a user-supplied link. Review the applicable third party’s terms and privacy information before using it.
+## 7. Third-party services and links
 
-## Intellectual property in Wren
+Wren operates through Discord, which controls its accounts, channels, permissions, message storage, and availability. The Operator uses Backblaze B2 for encrypted recovery backups and Gmail for the contact address, as described in the Privacy Policy. Their services are subject to their own applicable terms and privacy practices.
 
-As between you and the Operator, the Operator retains its rights in the Wren application, including its code, name, and original visual assets. These Terms grant you permission to use the Service as provided; they do not transfer ownership of the application. This section does not affect rights you or another person may hold in User Content.
+We are not responsible for the content or practices of a third-party site reached through a user-provided link. Review that service's terms and privacy information before using it. This section does not exclude responsibilities the Operator has under applicable law.
 
-## Availability and disclaimers
+## 8. Intellectual property in Wren
 
-The Service may be unavailable because of maintenance, technical failures, Discord outages, or other causes. We do not promise uninterrupted operation, preservation of a particular response, or any particular outcome. Keep your own copy of information you need to preserve; the Service is not a backup.
+As between you and the Operator, the Operator retains its rights in the Wren application, name, code, and original visual assets. These Terms permit use of the Service as provided; they do not transfer ownership of Wren.
 
-**To the extent permitted by applicable law, the Service is provided “as is” and “as available,” without warranties of uninterrupted availability or fitness for a particular purpose. Nothing in these Terms excludes a warranty, remedy, or other right that applicable law does not permit us to exclude.**
+This section does not change rights in User Content, third-party materials, or software provided under an applicable separate license. Such licenses govern the materials they cover.
 
-## Changes, suspension, and termination
+## 9. Availability and disclaimers
 
-We may modify these Terms or the Service from time to time. If a change materially affects users, we will make a reasonable effort to provide notice through a channel where Wren is used or another appropriate means before it takes effect. The revision date above will be updated when these Terms change. If you do not accept revised Terms, stop using Wren and, if you administer a server, remove the application.
+Wren may be unavailable because of maintenance, host or network failures, Discord outages, or other causes. We do not promise uninterrupted operation, preservation of a particular message or response, successful role changes, or any particular editorial outcome. Keep your own copies of information you need. The Operator's recovery backups do not make Wren a backup service for your content or guarantee recovery after data loss.
 
-You may stop using Wren at any time. A server administrator may remove it from a server. We may suspend or discontinue access where reasonably necessary to address a violation of these Terms, security, legal obligations, or the operation of the Service. Sections concerning content rights, responsibility for prior use, disclaimers, and data handling continue to apply to the extent their nature requires after use ends.
+**To the extent permitted by applicable law, the Service is provided "as is" and "as available," without warranties of uninterrupted availability or fitness for a particular purpose. Nothing in these Terms excludes a warranty, remedy, or other right that applicable law does not permit us to exclude.**
 
-## Responsibility and limitations
+## 10. Changes, suspension, and termination
 
-You are responsible for the content you submit and the consequences of your use of the Service. We are not a party to disputes between users or between a user and a server administrator. **To the extent permitted by applicable law, the Operator is not responsible for losses caused by Discord outages, user-supplied content, or decisions made by server administrators or other users.** This provision does not limit liability that cannot lawfully be limited.
+We may add, change, limit, or discontinue features and may revise these Terms. For changes materially affecting users, we will make a reasonable effort to provide notice through a channel where Wren is used or another appropriate means before the change takes effect. We will update the revision date. If you do not accept revised Terms, stop using Wren and, if you administer a server, remove the application.
 
-## General provisions
+You may stop using Wren at any time, and a server administrator may remove it from a server. We may suspend or discontinue access where reasonably necessary to address a violation of these Terms, security concerns, legal obligations, or operation of the Service.
 
-If a provision of these Terms is held unenforceable, the remaining provisions will continue to apply to the extent permitted by law. A failure to enforce a provision on one occasion is not a waiver of the right to enforce it later. These Terms and the Wren Privacy Policy address use of Wren; they do not replace Discord’s terms or any separate agreement between users or organizations.
+Ending access does not itself erase existing data. The Privacy Policy and applicable deletion obligations continue to govern retained information. If the Operator stops operating Wren, Discord API data will be deleted unless applicable law requires its retention. Provisions concerning rights in content, responsibility for prior use, disclaimers, and data handling continue only to the extent their nature and applicable law require.
 
-## Contact
+## 11. Responsibility and limitations
 
-Questions, complaints, or notices concerning these Terms may be sent to **contact.wrenbot@gmail.com**.
+You are responsible for the content you submit and the consequences of your use. The Operator is not a party to disputes between users or between users and server administrators.
+
+**To the extent permitted by applicable law, the Operator is not responsible for losses caused by Discord outages, user-provided content, or decisions made by server administrators or other users.** This provision does not limit liability that cannot lawfully be limited.
+
+## 12. General provisions
+
+If a provision is held unenforceable, the remaining provisions continue to apply to the extent permitted by law. A failure to enforce a provision on one occasion does not waive the right to enforce it later.
+
+These Terms and the Privacy Policy address use of Wren. They do not replace Discord's terms, applicable software licenses, or separate agreements between users or organizations, and they do not waive mandatory legal rights.
+
+## 13. Contact
+
+For support, questions, complaints, legal notices, privacy inquiries, or data-deletion requests, contact **[contact.wrenbot@gmail.com](mailto:contact.wrenbot@gmail.com)**.
