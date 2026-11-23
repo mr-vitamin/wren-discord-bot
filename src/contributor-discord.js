@@ -1,7 +1,7 @@
 const { randomBytes } = require('node:crypto');
 const {
   ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, EmbedBuilder,
-  MessageFlags, PermissionFlagsBits, SlashCommandBuilder, StringSelectMenuBuilder,
+  MessageFlags, PermissionFlagsBits, SlashCommandBuilder, StringSelectMenuBuilder, escapeMarkdown,
 } = require('discord.js');
 const {
   changeParticipation, createResetLock, isCurrentControl, issueControlId,
@@ -107,7 +107,13 @@ async function handleStaffCommand(interaction, { file, guildId, staffChannelId, 
     await resetLock.run(async () => {
       const current = loadIssue(file);
       if (action === 'announce') {
-        if (current?.enabled) throw new Error(`Close ${current.issue} before announcing another issue.`);
+        if (current?.enabled) {
+          await interaction.editReply({
+            content: `Participation for **${escapeMarkdown(current.issue)}** is already open. Use \`/contributor close\` before announcing another issue. Closing preserves Contributor roles; use \`/contributor reset\` to clear them intentionally.`,
+            allowedMentions: { parse: [] },
+          });
+          return;
+        }
         resolveContributorRole(interaction.guild);
         const issueName = interaction.options.getString('issue', true).trim();
         const title = interaction.options.getString('title', true).trim();

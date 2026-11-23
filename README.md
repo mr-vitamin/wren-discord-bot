@@ -8,6 +8,13 @@ This repository contains the existing implementation, published as a portfolio p
 
 ## Implemented features
 
+### Command help and presence
+
+- `/help` is public and available to everyone in the configured server, in any channel where Wren can respond.
+- Its purple embed lists every command and subcommand, including staff commands, with descriptions and permission requirements.
+- Help links to [Wren's website](https://vtmnarchive.com/archive/wren-discord-bot). Existing command permissions still apply.
+- Wren connects with Online status and the Playing activity `/help | vtmnarchive.com`.
+
 ### Community quotes
 
 - `/quote` accepts quote text and a speaker, then posts a formatted embed in the configured quotes channel.
@@ -36,9 +43,13 @@ The tracker supports multiple pieces per author, rejects duplicate post links, a
 - Members can add or remove the existing `Contributor` role through the dropdown and receive private confirmations.
 - `/contributor close` closes participation while keeping existing roles.
 - `/contributor reset` requires a confirmation button, removes the role from current holders, and reports successful and failed removals.
+- Announcing while an issue is open explains that staff must close it first. Closing preserves roles; staff intentionally reset them before the next issue when they want a clean participant list.
+- A closed issue's missing announcement does not prevent announcing the next issue. Old dropdowns remain invalid even when Wren cannot edit the old message.
 - Saved issue state rejects closed or outdated dropdowns. A shared lock coordinates participation changes and staff operations.
 
 Contributor staff commands require **Manage Roles** and the configured staff channel. Participation expresses interest in an issue; it does not submit a manuscript or indicate publication acceptance. The implementation has automated tests with mocked Discord interactions; those tests do not establish live-server validation.
+
+For Contributor, help, and presence activation, see the [single deployment procedure](docs/contributor-help-deployment.md). Each production restart requires approval.
 
 ## Technologies
 
@@ -61,6 +72,7 @@ src/
   submissions.js                Editorial records and persistence
   contributor.js                Issue state, role operations, and coordination
   contributor-discord.js        Participation commands and Discord components
+scripts/read-backup-context.ps1 Read-only Windows task metadata collector for backup tooling
 test/                           Automated tracker and participation tests
 setup-token.ps1                 Hidden token prompt and DPAPI encryption
 run-wren.ps1                    Background runner, logging, and restart loop
@@ -94,6 +106,8 @@ npm run check
 
 `npm run check` checks the entry point's syntax and runs the tests. These tests use local files, mocked Discord interactions, and (on Windows) mocked Task Scheduler commands; they do not log the bot into Discord or alter real tasks. Windows startup tests are skipped on other operating systems.
 
+The optional [backup context reader](scripts/read-backup-context.ps1) collects the active Wren task definition and security descriptor under the current Windows account. It tolerates an absent retired `Foxie Quotes Bot` task, while refusing a missing active task, account mismatch, access denial, or export failure. Its JSON output contains private machine metadata and must remain local; this repository includes only the reader source and synthetic tests. Separate private backup tooling continues using its existing installed copy.
+
 ### Configure Discord
 
 The bot is configured for a single server. Before running your own copy:
@@ -103,7 +117,7 @@ The bot is configured for a single server. Before running your own copy:
 3. Authorize the application with the `bot` and `applications.commands` scopes. Grant the bot the channel permissions it needs to view channels, send messages, embed links, and read message history, plus **Manage Roles** for participation.
 4. Create one role named `Contributor` and place Wren's bot role above it. Restrict access to the configured staff channel through Discord permissions.
 
-On connection, Wren replaces this application's guild command list with `/quote`, `/sub`, and `/contributor`. Use a separate application for testing if an existing bot is already running.
+On connection, Wren replaces this application's guild command list with `/quote`, `/sub`, `/contributor`, and `/help`. Use a separate application for testing if an existing bot is already running. Changes to presence and command registration take effect on the next approved restart; editing the source does not activate them in a running bot.
 
 ### Store the token and start a new installation
 

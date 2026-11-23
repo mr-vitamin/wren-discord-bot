@@ -27,6 +27,7 @@ const {
 const { loadIssue } = require('./contributor');
 const { isStaff } = require('./access');
 const { createClientOptions } = require('./client-options');
+const { helpCommand, buildHelpEmbed } = require('./help');
 const { log } = require('./safe-log');
 const { createMaintenance } = require('./maintenance');
 const { acquireLock } = require('./operation-lock');
@@ -130,6 +131,8 @@ const submissionCommand = new SlashCommandBuilder()
     subcommand.setName('summary').setDescription('See editorial workload at a glance'),
   );
 
+const commands = [quoteCommand, submissionCommand, contributorCommand, helpCommand];
+
 function validateForumLink(link) {
   if (!link) return null;
   let url;
@@ -229,6 +232,14 @@ async function handleInteraction(interaction) {
     return;
   }
 
+  if (interaction.commandName === 'help') {
+    await interaction.reply({
+      embeds: [buildHelpEmbed(commands, COMMAND_CHANNEL_ID)],
+      allowedMentions: { parse: [] },
+    });
+    return;
+  }
+
   if (interaction.commandName === 'contributor') {
     await handleStaffCommand(interaction, {
       file: CONTRIBUTOR_ISSUE_FILE, guildId: GUILD_ID,
@@ -306,7 +317,7 @@ function start() {
     try {
       const rest = new REST({ version: '10' }).setToken(token);
       await rest.put(Routes.applicationGuildCommands(readyClient.user.id, GUILD_ID),
-        { body: [quoteCommand.toJSON(), submissionCommand.toJSON(), contributorCommand.toJSON()] });
+        { body: commands.map(command => command.toJSON()) });
       log('ready');
     } catch (error) { log('startup_failed', error); client.destroy(); process.exitCode = 1; }
   });
@@ -320,4 +331,4 @@ if (require.main === module) {
   process.on('uncaughtException', error => { log('unhandled_failure', error); process.exit(1); });
   try { start(); } catch (error) { log('startup_failed', error); process.exitCode = 1; }
 }
-module.exports = { handleSubmissionCommand, handleInteraction, submissionCommand, quoteCommand, start };
+module.exports = { handleSubmissionCommand, handleInteraction, submissionCommand, quoteCommand, commands, start };
