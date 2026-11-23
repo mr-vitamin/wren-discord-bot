@@ -39,7 +39,7 @@ The tracker supports multiple pieces per author, rejects duplicate post links, a
 
 ### Issue participation
 
-- `/contributor announce` posts a staff-written announcement with a **Participate / Withdraw** dropdown.
+- `/contributor announce` posts a purple embed with an issue label, headline, staff-written details, participation instructions, and a **Join this issue / Withdraw from this issue** dropdown.
 - Members can add or remove the existing `Contributor` role through the dropdown and receive private confirmations.
 - `/contributor close` closes participation while keeping existing roles.
 - `/contributor reset` requires a confirmation button, removes the role from current holders, and reports successful and failed removals.
@@ -48,6 +48,24 @@ The tracker supports multiple pieces per author, rejects duplicate post links, a
 - Saved issue state rejects closed or outdated dropdowns. A shared lock coordinates participation changes and staff operations.
 
 Contributor staff commands require **Manage Roles** and the configured staff channel. Participation expresses interest in an issue; it does not submit a manuscript or indicate publication acceptance. The implementation has automated tests with mocked Discord interactions; those tests do not establish live-server validation.
+
+Announcement inputs retain their existing names and length limits. `message` is now optional; `dates` and `submission` are new optional text inputs:
+
+| Option | Purpose and example | Required | Limit |
+| --- | --- | --- | --- |
+| `issue` | Tracking label, e.g. `Spring Collection`. Shown above the headline only when the headline does not already include it; still used in participation confirmations. | Yes | 100 characters |
+| `title` | Embed headline, e.g. `Spring Collection — Open Call`. | Yes | 256 characters |
+| `description` | Editorial details. Use compact Markdown labels for prompts, categories, word limits, and community-specific guidance. | Yes | 4,000 characters |
+| `channel` | Destination text or announcement channel, e.g. `#announcements`. Invoke from the configured staff channel. | Yes | One channel |
+| `message` | Custom intro above the embed. Omit it for an embed-only announcement. An exact repeat of the issue label, headline, or body is suppressed, ignoring formatting and whitespace differences. | No | 2,000 characters |
+| `dates` | Compact **Important Dates** section. Supply labeled submission deadlines and release dates, one per line, using your dates or Discord timestamps. | No | 256 characters |
+| `submission` | **How to Submit** section near the bottom. Supply a website/form link, email address, plain instructions, and/or a guidelines reference. No link is required. | No | 1,024 characters |
+
+Wren adds one concise **Participation** section adjacent to the unchanged dropdown, explaining that joining indicates interest rather than manuscript submission or acceptance. A separately headed `How to Participate` or `Participation` block in the description is omitted up to the next Markdown heading or labeled section. Repeated leading issue/headline lines and excess blank lines are removed; fenced Markdown examples remain intact. Put manuscript delivery instructions in `submission` so they stay separate from participation.
+
+Empty optional sections are omitted entirely. Existing announcements that keep their dates or submission guidance in `description` remain supported; the new fields do not interpret or enforce deadlines, word limits, or submission rules. Wren does not accept manuscripts or process submissions through these announcement fields.
+
+Required options precede optional ones in Discord, so `channel` now appears before `message`. Existing named inputs still work, including a distinct custom intro. No option was renamed or removed, and the dropdown still stores `participate` and `withdraw`. Presentation changes apply to future announcements after an approved activation; historical announcements and saved participation records are not rewritten.
 
 For Contributor, help, and presence activation, see the [single deployment procedure](docs/contributor-help-deployment.md). Each production restart requires approval.
 

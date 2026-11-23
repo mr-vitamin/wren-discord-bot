@@ -14,7 +14,7 @@ test('staff commands expose announce, close, and reset with role management perm
   assert.equal(command.name, 'contributor');
   assert.deepEqual(command.options.map((option) => option.name), ['announce', 'close', 'reset']);
   assert.equal(BigInt(command.default_member_permissions), PermissionFlagsBits.ManageRoles);
-  assert.deepEqual(command.options[0].options.map((option) => option.name), ['issue', 'title', 'description', 'message', 'channel']);
+  assert.deepEqual(command.options[0].options.map((option) => option.name), ['issue', 'title', 'description', 'channel', 'message', 'dates', 'submission']);
 });
 
 test('staff announce posts one message with the menu and persists its message ID', async () => {
@@ -44,10 +44,56 @@ test('staff announce posts one message with the menu and persists its message ID
     assert.equal(sent.content, 'Our new writing prompt is here. Join in if you want to write for this issue.');
     assert.equal(sent.embeds[0].toJSON().title, 'Worlds Collide');
     assert.equal(sent.embeds[0].toJSON().description, 'Write a story where two worlds meet.');
+    assert.equal(sent.embeds[0].toJSON().color, 0xa855f7);
+    assert.equal(sent.embeds[0].toJSON().author.name, 'Issue #2');
+    assert.equal(sent.embeds[0].toJSON().fields[0].name, 'Participation');
     assert.equal(sent.embeds[0].toJSON().footer, undefined);
-    assert.match(sent.components[0].toJSON().components[0].placeholder, /Issue #2/);
+    assert.equal(sent.components[0].toJSON().components[0].placeholder, 'Select your participation type...');
     assert.equal(loadIssue(file).messageId, '456');
     assert.match(acknowledgement, /456/);
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('announce without an intro forwards optional sections and saves only the existing issue metadata', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wren-optional-announcement-'));
+  try {
+    const file = path.join(directory, 'issue.json');
+    require('../src/secure-storage').secureStore.writeJson(path.join(directory, 'privacy-state.json'), {
+      version: 1, subjects: [], highWaterMark: 0, requiredFiles: [], pending: null,
+    });
+    let sent;
+    const channel = { id: '123', guildId: 'guild', send: async payload => {
+      sent = payload;
+      return { id: '456', url: 'https://discord.com/synthetic' };
+    } };
+    const input = {
+      issue: 'Spring Collection', title: 'Spring Collection — Open Call',
+      description: '**Prompt:** A custom theme\n**Categories:** Any genre\n**Word limits:** Staff guidelines',
+      dates: '**Deadline:** Staff date\n**Release:** Staff schedule',
+      submission: 'Email submissions@example.org; read our community guidelines.',
+    };
+    await handleStaffCommand({
+      guildId: 'guild', channelId: 'staff', memberPermissions: { has: () => true },
+      guild: { roles: { cache: new Map([['role', { id: 'role', name: 'Contributor' }]]) } },
+      options: {
+        getSubcommand: () => 'announce', getChannel: () => channel,
+        getString: (key, required) => {
+          if (['message', 'dates', 'submission'].includes(key)) assert.notEqual(required, true);
+          return input[key] ?? null;
+        },
+      },
+      deferReply: async () => {}, editReply: async () => {},
+    }, { file, guildId: 'guild', staffChannelId: 'staff', resetLock: createResetLock() });
+    assert.equal(Object.hasOwn(sent, 'content'), false);
+    const embed = sent.embeds[0].toJSON();
+    assert.equal(embed.author, undefined);
+    assert.equal(embed.description, input.description);
+    assert.deepEqual(embed.fields.map(field => field.name), ['Important Dates', 'How to Submit', 'Participation']);
+    assert.equal(embed.fields[1].value, input.submission);
+    const saved = loadIssue(file);
+    assert.equal(saved.enabled, true);
+    assert.deepEqual(Object.keys(saved).sort(), ['channelId', 'enabled', 'generation', 'issue', 'messageId']);
+    assert.deepEqual(sent.allowedMentions, { parse: [] });
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });
 
@@ -114,10 +160,10 @@ test('confirmed reset closes issue, removes every available holder, and reports 
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });
 
-test('issue dropdown identifies the issue and has participate and withdraw choices', () => {
+test('issue dropdown prompts a participation choice and preserves participate and withdraw values', () => {
   const issue = { issue: 'Issue #2', generation: 'abc', enabled: true };
   const menu = buildMenu(issue).toJSON().components[0];
-  assert.match(menu.placeholder, /Issue #2/);
+  assert.equal(menu.placeholder, 'Select your participation type...');
   assert.deepEqual(menu.options.map((option) => option.value), ['participate', 'withdraw']);
   assert.equal(buildMenu({ ...issue, enabled: false }).toJSON().components[0].disabled, true);
 });

@@ -11,27 +11,94 @@ const { log } = require('./safe-log');
 
 const contributorCommand = new SlashCommandBuilder()
   .setName('contributor')
-  .setDescription('Manage magazine issue participation (staff only)')
+  .setDescription('Manage issue participation (staff only)')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
   .setDMPermission(false)
   .addSubcommand((command) => command.setName('announce').setDescription('Post an issue announcement with participation choices')
-    .addStringOption((option) => option.setName('issue').setDescription('Issue name, e.g. Issue #2').setRequired(true).setMaxLength(100))
-    .addStringOption((option) => option.setName('title').setDescription('Announcement title').setRequired(true).setMaxLength(256))
-    .addStringOption((option) => option.setName('description').setDescription('Announcement description').setRequired(true).setMaxLength(4000))
-    .addStringOption((option) => option.setName('message').setDescription('Main message shown above the announcement').setRequired(true).setMaxLength(2000))
-    .addChannelOption((option) => option.setName('channel').setDescription('Where Wren should post the announcement').setRequired(true)
-      .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)))
+    .addStringOption((option) => option.setName('issue').setDescription('Issue tracking label, e.g. Issue 3 or Spring Collection; shown in participation confirmations').setRequired(true).setMaxLength(100))
+    .addStringOption((option) => option.setName('title').setDescription('Embed headline, e.g. Call for Contributions (shown below the issue label)').setRequired(true).setMaxLength(256))
+    .addStringOption((option) => option.setName('description').setDescription('Embed body: prompt, categories and word limits (Markdown). Wren adds participation instructions.').setRequired(true).setMaxLength(4000))
+    .addChannelOption((option) => option.setName('channel').setDescription('Destination for the announcement and dropdown, e.g. #announcements; run this command in staff chat').setRequired(true)
+      .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement))
+    .addStringOption((option) => option.setName('message').setDescription('Optional intro text above the embed; leave blank for none. Exact repeated text is hidden.').setRequired(false).setMaxLength(2000))
+    .addStringOption((option) => option.setName('dates').setDescription('Optional Important Dates text: submission deadlines and release dates, one labeled date per line').setRequired(false).setMaxLength(256))
+    .addStringOption((option) => option.setName('submission').setDescription('Optional How to Submit text: your form, website, email, instructions or guidelines; no link required').setRequired(false).setMaxLength(1024)))
   .addSubcommand((command) => command.setName('close').setDescription('Close participation without removing Contributor'))
   .addSubcommand((command) => command.setName('reset').setDescription('Remove Contributor from all current members after confirmation'));
+
+function comparableText(text) {
+  return text.normalize('NFKC').replace(/[*_`~]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function sectionHeading(line) {
+  const text = line.trim();
+  const match = /^#{1,6}\s+(.+?)(?:\s+#+)?$/.exec(text)
+    || /^(?:\*\*|__)(.+?)(?:\*\*|__)(?:\s*:)?(?:\s+.*)?$/.exec(text)
+    || /^([A-Za-z][A-Za-z ]{0,60}):(?:\s|$)/.exec(text);
+  return match ? match[1].replace(/:\s*$/, '').trim() : null;
+}
+
+function announcementDetails(description, issueLabel, title) {
+  const identifiers = [issueLabel, title].map(comparableText);
+  const lines = [];
+  let participation = false, leading = true, fence = null;
+  for (const line of description.trim().replace(/\r\n?/g, '\n').split('\n')) {
+    const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
+    if (marker) {
+      if (!fence) fence = marker;
+      else if (marker[0] === fence[0] && marker.length >= fence.length) fence = null;
+      if (!participation) { lines.push(line); leading = false; }
+      continue;
+    }
+    if (fence) { if (!participation) lines.push(line); continue; }
+    const heading = sectionHeading(line);
+    if (heading) participation = /^(?:how to participate|participation)$/i.test(heading);
+    if (participation) continue;
+    if (leading && (!line.trim() || identifiers.includes(comparableText(heading || line)))) continue;
+    if (!line.trim() && !lines.at(-1)?.trim()) continue;
+    lines.push(line);
+    if (line.trim()) leading = false;
+  }
+  return lines.join('\n').trim();
+}
+
+function buildAnnouncementEmbed(issue, title, description, { dates, submission } = {}) {
+  const embed = new EmbedBuilder()
+    .setColor(0xa855f7)
+    .setTitle(title)
+    .setDescription(announcementDetails(description, issue.issue, title) || null);
+  const label = comparableText(issue.issue).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (!new RegExp(`(?:^|[^\\p{L}\\p{N}])${label}(?:$|[^\\p{L}\\p{N}])`, 'u').test(comparableText(title))) {
+    embed.setAuthor({ name: issue.issue });
+  }
+  const dateText = dates?.trim().split(/\r?\n/).map(line => line.trim()).filter(Boolean).join('\n');
+  if (dateText) embed.addFields({ name: 'Important Dates', value: dateText });
+  if (submission?.trim()) embed.addFields({ name: 'How to Submit', value: submission.trim() });
+  return embed.addFields({
+      name: 'Participation',
+      value: 'Choose **Join this issue** to receive the Contributor role, or **Withdraw from this issue** to remove it. Joining indicates interest; it does not submit a manuscript or confirm acceptance.',
+    });
+}
+
+function buildAnnouncementPayload(issue, { title, description, message, dates, submission }) {
+  const embed = buildAnnouncementEmbed(issue, title, description, { dates, submission });
+  const intro = message?.trim();
+  const repeated = intro && [issue.issue, title, description, embed.data.description || '']
+    .some(text => comparableText(text) === comparableText(intro));
+  return {
+    ...(intro && !repeated ? { content: intro } : {}),
+    embeds: [embed], components: [buildMenu(issue)], allowedMentions: { parse: [] },
+  };
+}
 
 function buildMenu(issue) {
   return new ActionRowBuilder().addComponents(new StringSelectMenuBuilder()
     .setCustomId(issueControlId(issue))
-    .setPlaceholder(`${issue.issue.slice(0, 95)} — choose participation`)
+    .setPlaceholder('Select your participation type...')
     .setDisabled(!issue.enabled)
     .addOptions(
-      { label: 'Participate', value: 'participate', description: 'Join this issue and open contributor feedback', emoji: '✒️' },
-      { label: 'Withdraw', value: 'withdraw', description: 'Leave this issue and close contributor feedback', emoji: '↩️' },
+      { label: 'Join this issue', value: 'participate', description: 'Receive the Contributor role to take part in this issue.', emoji: '✒️' },
+      { label: 'Withdraw from this issue', value: 'withdraw', description: 'Remove the Contributor role and withdraw from this issue.', emoji: '↩️' },
     ));
 }
 
@@ -118,13 +185,16 @@ async function handleStaffCommand(interaction, { file, guildId, staffChannelId, 
         const issueName = interaction.options.getString('issue', true).trim();
         const title = interaction.options.getString('title', true).trim();
         const description = interaction.options.getString('description', true).trim();
-        const mainMessage = interaction.options.getString('message', true).trim();
-        if (!issueName || !title || !description || !mainMessage) throw new Error('Announcement fields cannot be blank.');
+        const mainMessage = interaction.options.getString('message')?.trim();
+        const dates = interaction.options.getString('dates');
+        const submission = interaction.options.getString('submission');
+        if (!issueName || !title || !description) throw new Error('Announcement fields cannot be blank.');
         const channel = interaction.options.getChannel('channel', true);
         if (!channel?.send || channel.guildId !== interaction.guildId) throw new Error('Choose a text or announcement channel in this server.');
         const issue = { issue: issueName, channelId: channel.id, messageId: '', generation: randomBytes(12).toString('hex'), enabled: true };
-        const embed = new EmbedBuilder().setColor(0x795744).setTitle(title).setDescription(description);
-        const message = await channel.send({ content: mainMessage, embeds: [embed], components: [buildMenu(issue)], allowedMentions: { parse: [] } });
+        const message = await channel.send(buildAnnouncementPayload(issue, {
+          title, description, message: mainMessage, dates, submission,
+        }));
         issue.messageId = message.id;
         try {
           saveIssue(file, issue);
@@ -202,4 +272,4 @@ async function confirmAndReset(interaction, { file, resetLock }) {
   }
 }
 
-module.exports = { contributorCommand, buildMenu, resolveContributorRole, handleChoice, handleStaffCommand, createResetLock };
+module.exports = { contributorCommand, buildAnnouncementEmbed, buildAnnouncementPayload, buildMenu, resolveContributorRole, handleChoice, handleStaffCommand, createResetLock };
